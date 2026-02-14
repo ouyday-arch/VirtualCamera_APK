@@ -4,6 +4,8 @@
 - **NEVER** use the local NDK on the host machine. Always rely on GitHub Actions for C++ compilation.
 - When creating `CMakeLists.txt`, always include the `aosp_headers` directory to prevent `fatal error: 'system/camera.h' file not found`.
 - **Do not** verify C++ builds locally using `./gradlew`. Use the `/git push` workflow to verify on the remote server.
+- All repository definitions (google(), mavenCentral()) MUST be placed in settings.gradle inside a dependencyResolutionManagement block. Do NOT place them in module-level build.gradle files.
+- Always create a gradle.properties file with android.useAndroidX=true for any project using modern Android libraries.
 
 ## 2. File Handling
 - **NEVER** use `../` (parent directory) traversal in Python/Aider commands on Windows. It causes `pathlib` crashes.
