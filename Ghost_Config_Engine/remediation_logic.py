@@ -71,22 +71,22 @@ def apply_mount_namespace_isolation():
         
         # Create a mount namespace for the camera app
         subprocess.run(['adb', 'shell', 'su -c "mkdir -p /data/adb/camera_ns"'], 
-                      capture_output=True)
+                      capture_output=True, check=True)
         
         # Configure denylist to hide Magisk components from most apps
         print("[*] Configuring DenyList...")
-        denylist_result = subprocess.run(
+        result = subprocess.run(
             ['adb', 'shell', 'su -c "magisk --denylist add com.google.android.gms"'],
             capture_output=True, text=True)
         
-        if "success" in denylist_result.stdout.lower() or "added" in denylist_result.stdout.lower():
+        if "success" in result.stdout.lower() or "added" in result.stdout.lower():
             print("   DenyList configured for Google Play Services")
         else:
-            print(f"   DenyList configuration result: {denylist_result.stdout}")
+            print(f"   DenyList configuration result: {result.stdout}")
             
         # Create mount namespace isolation
         subprocess.run(['adb', 'shell', 'su -c "mkdir -p /data/adb/mount_isolation"'], 
-                   capture_output=True)
+                   capture_output=True, check=True)
         
         print("[+] Mount-Namespace Isolation applied")
         return True
@@ -124,9 +124,9 @@ echo "Magisk components unmounted"
         
         # Write the script to device
         subprocess.run(['adb', 'shell', f'su -c "echo \'{unmount_script}\' > /data/adb/unmount.sh"'], 
-                         capture_output=True)
+                         capture_output=True, check=True)
         subprocess.run(['adb', 'shell', 'su -c "chmod 755 /data/adb/unmount.sh"'], 
-                        capture_output=True)
+                        capture_output=True, check=True)
         
         print("[+] Magisk components unmounted for non-camera apps")
         return True

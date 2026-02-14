@@ -26,7 +26,7 @@ def inject_private_keybox():
         
         # Create a mock keybox (in real implementation this would be more complex)
         keybox_path = "/data/adb/keybox"
-        subprocess.run(['adb', 'shell', f'mkdir -p {keybox_path}'], capture_output=True)
+        subprocess.run(['adb', 'shell', f'mkdir -p {keybox_path}'], capture_output=True, check=True)
         
         # Generate dummy certificate for demonstration
         cert_file = os.path.join(keybox_path, "cert.der")
@@ -36,8 +36,11 @@ def inject_private_keybox():
         print(f"[+] Private keybox created at {keybox_path}")
         return True
         
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         print(f"[!] Error creating private keybox: {e}")
+        return False
+    except Exception as e:
+        print(f"[!] Unexpected error creating private keybox: {e}")
         return False
 
 def hide_unlocked_bootloader():
@@ -50,20 +53,23 @@ def hide_unlocked_bootloader():
         print("[*] Hiding unlocked bootloader flag...")
         
         # Set proper boot parameters to appear as locked
-        boot_params = [
+        stealth_props = [
             "ro.boot.flash.locked=1",
             "ro.boot.verifiedbootstate=green", 
             "ro.boot.vbmeta.device_state=locked"
         ]
         
-        for param in boot_params:
-            subprocess.run(['adb', 'shell', f'su -c "setprop {param}"'], capture_output=True)
+        for prop in stealth_props:
+            subprocess.run(['adb', 'shell', f'su -c "setprop {prop}"'], capture_output=True, check=True)
             
         print("[+] Bootloader flags hidden successfully")
         return True
         
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         print(f"[!] Error hiding bootloader flag: {e}")
+        return False
+    except Exception as e:
+        print(f"[!] Unexpected error hiding bootloader flag: {e}")
         return False
 
 def setup_tricky_store():
@@ -76,17 +82,20 @@ def setup_tricky_store():
         
         # Create directory structure for TrickyStore
         tricky_store_path = "/data/adb/trickystore"
-        subprocess.run(['adb', 'shell', f'mkdir -p {tricky_store_path}'], capture_output=True)
+        subprocess.run(['adb', 'shell', f'mkdir -p {tricky_store_path}'], capture_output=True, check=True)
         
         # Copy keybox to trickystore location (in real implementation this would be more complex)
         keybox_source = "/data/adb/keybox"
-        subprocess.run(['adb', 'shell', f'cp -r {keybox_source}/* {tricky_store_path}/'], capture_output=True)
+        subprocess.run(['adb', 'shell', f'cp -r {keybox_source}/* {tricky_store_path}/'], capture_output=True, check=True)
         
         print("[+] TrickyStore setup completed")
         return True
         
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         print(f"[!] Error setting up TrickyStore: {e}")
+        return False
+    except Exception as e:
+        print(f"[!] Unexpected error setting up TrickyStore: {e}")
         return False
 
 def configure_tricky_store():
@@ -101,7 +110,7 @@ def configure_tricky_store():
         
         # Create configuration directory
         config_path = "/data/adb/trickystore/config"
-        subprocess.run(['adb', 'shell', f'mkdir -p {config_path}'], capture_output=True)
+        subprocess.run(['adb', 'shell', f'mkdir -p {config_path}'], capture_output=True, check=True)
         
         # Generate a mock configuration file (in real implementation this would be more complex)
         config_file = os.path.join(config_path, "tricky_config.json")
@@ -111,8 +120,31 @@ def configure_tricky_store():
         print("[+] TrickyStore configured successfully")
         return True
         
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         print(f"[!] Error configuring TrickyStore: {e}")
+        return False
+    except Exception as e:
+        print(f"[!] Unexpected error configuring TrickyStore: {e}")
+        return False
+
+def setup_zygisk_next():
+    """Setup Zygisk-Next for enhanced root obfuscation"""
+    try:
+        print("[*] Setting up Zygisk-Next...")
+        
+        # Configure denylist to hide Magisk components from most apps
+        print("[*] Configuring DenyList...")
+        subprocess.run(['adb', 'shell', 'su -c "magisk --denylist add com.google.android.gms"'], 
+                     capture_output=True, check=True)
+        
+        print("[+] Zygisk-Next setup completed")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Error setting up Zygisk-Next: {e}")
+        return False
+    except Exception as e:
+        print(f"[!] Unexpected error setting up Zygisk-Next: {e}")
         return False
 
 def run_tee_masking():
@@ -137,6 +169,11 @@ def run_tee_masking():
     # Configure TrickyStore
     if not configure_tricky_store():
         print("[!] Failed to configure TrickyStore")
+        return False
+    
+    # Setup Zygisk-Next for enhanced root obfuscation
+    if not setup_zygisk_next():
+        print("[!] Failed to setup Zygisk-Next")
         return False
     
     print("[+] TEE Attestation Masking Complete!")

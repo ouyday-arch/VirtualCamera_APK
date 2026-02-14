@@ -5,7 +5,7 @@ This directory contains the core configuration and management tools for creating
 ## Files:
 
 - `ghost_identity_master.json` - The master golden profile containing all device specifications, unique identifiers, and system properties.
-- `sentry_audit.py` - Device compliance audit tool that validates current device against the golden profile.
+- `sentry_audit.py` - Device compliance audit tool that validates current device state against the golden profile.
 - `remediation_logic.py` - Remediation procedures to apply changes needed to match the golden profile.
 - `tee_mask.py` - TEE attestation masking tools for TrickyStore integration.
 

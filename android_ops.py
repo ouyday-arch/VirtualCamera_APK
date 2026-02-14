@@ -17,7 +17,7 @@ def run_adb(command):
         return f"[!] Execution Failed: {str(e)}"
 
 def download_module(url, filename):
-    """Downloads a file from URL to a temporary folder on the PC"""
+    """Downloads a file from URL to a temporary folder"""
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -38,15 +38,15 @@ def scan_device():
     print("[*] Scanning Device Hardware & OS...")
     props = run_adb("shell getprop")
     
-    # Extract key intel
+    # Extract key info
     model = re.search(r"\[ro\.product\.model\]: \[(.*?)\]", props)
     android_ver = re.search(r"\[ro\.build\.version\.release\]: \[(.*?)\]", props)
     security_patch = re.search(r"\[ro\.build\.version\.security_patch\]: \[(.*?)\]", props)
     fingerprint = re.search(r"\[ro\.build\.fingerprint\]: \[(.*?)\]", props)
     
     print(f"   Model: {model.group(1) if model else 'Unknown'}")
-    print(f"   Android: {android_ver.group(1) if android_ver else 'Unknown'}")
-    print(f"   Patch Level: {security_patch.group(1) if security_patch else 'Unknown'}")
+    print(f"   Android Version: {android_ver.group(1) if android_ver else 'Unknown'}")
+    print(f"   Security Patch Level: {security_patch.group(1) if security_patch else 'Unknown'}")
     print(f"   Fingerprint: {fingerprint.group(1) if fingerprint else 'Unknown'}")
 
 def check_root():
@@ -72,7 +72,7 @@ def optimize_for_vcam():
     print(f"   Overlay Permission: {overlay}")
     
     # Push optimized config if needed
-    print("   [i] Recommendation: Push 'disable_vcam' killswitch to prevent loops.")
+    print("   [i] Recommendation: Push 'disable_vcam' killswitch to prevent loops")
 
 def lock_hardware_identity():
     """Lock hardware identity using Golden Profile values"""
@@ -111,10 +111,10 @@ def provision_zero_day():
     # Check if device is connected
     devices = run_adb("devices")
     if "device" not in devices:
-        print("[!] No Android device found. Please connect your device via USB and enable Developer Options.")
+        print("[!] No Android device found. Please connect your device and enable Developer Options.")
         return
     
-    # Verify ADB is working properly
+    # Verify ADB connection
     adb_check = run_adb("shell echo 'ADB Working'")
     if "ADB Working" not in adb_check:
         print("[!] ADB connection failed. Please check USB debugging settings.")
@@ -263,9 +263,11 @@ if __name__ == "__main__":
             else:
                 zip_path = sys.argv[2]
                 print(f"[*] Pushing {zip_path}...")
-                run_adb(f"push {zip_path} /sdcard/module.zip")
+                result = run_adb(f"push {zip_path} /sdcard/module.zip")
+                print(result)
                 print("[*] Installing via Magisk...")
-                print(run_adb("shell su -c magisk --install-module /sdcard/module.zip"))
+                install_result = run_adb("shell su -c magisk --install-module /sdcard/module.zip")
+                print(install_result)
                 print("[*] Reboot required.")
         elif cmd == "provision":
             provision_zero_day()

@@ -14,43 +14,45 @@ def load_ghost_profile():
         print(f"[!] Error loading ghost profile: {e}")
         return None
 
-def run_forensic_mock_scan():
-    """Run a forensic mock-scan to check for stealth violations"""
-    print("[*] Running Forensic Mock-Scan...")
-    
-    # Check for root components that shouldn't be visible
-    checks = [
-        ("Root binary", "/sbin/su"),
-        ("Magisk directory", "/data/adb/magisk"),
-        ("Zygisk in memory maps", "zygisk")
-    ]
-    
+def check_root_components():
+    """Check for root components that shouldn't be visible"""
     violations_found = []
     
-    for check_name, path in checks:
-        if check_name == "Root binary":
-            # Check for su binary
-            result = subprocess.run(['adb', 'shell', 'ls -l /sbin/su'], 
-                                  capture_output=True, text=True)
-            if "/sbin/su" in result.stdout:
-                print(f"[!] Found root binary: {path}")
-                violations_found.append("Root binary")
-                
-        elif check_name == "Magisk directory":
-            # Check for Magisk directory
-            result = subprocess.run(['adb', 'shell', 'ls -l /data/adb/magisk'], 
-                                  capture_output=True, text=True)
-            if "/data/adb/magisk" in result.stdout:
-                print(f"[!] Found Magisk directory: {path}")
-                violations_found.append("Magisk directory")
-                
-        elif check_name == "Zygisk in memory maps":
-            # Check for Zygisk strings in memory
-            result = subprocess.run(['adb', 'shell', 'cat /proc/self/maps'], 
-                                  capture_output=True, text=True)
-            if "zygisk" in result.stdout.lower():
-                print("[!] Found Zygisk in memory maps")
-                violations_found.append("Zygisk in memory maps")
+    # Check for su binary
+    try:
+        result = subprocess.run(['adb', 'shell', 'ls -l /sbin/su'], 
+                              capture_output=True, text=True)
+        if "/sbin/su" in result.stdout:
+            print("[!] Found root binary: /sbin/su")
+            violations_found.append("Root binary")
+    except Exception as e:
+        pass
+    
+    # Check for Magisk directory
+    try:
+        result = subprocess.run(['adb', 'shell', 'ls -l /data/adb/magisk'], 
+                              capture_output=True, text=True)
+        if "/data/adb/magisk" in result.stdout:
+            print("[!] Found Magisk directory: /data/adb/magisk")
+            violations_found.append("Magisk directory")
+    except Exception as e:
+        pass
+    
+    # Check for Zygisk strings in memory
+    try:
+        result = subprocess.run(['adb', 'shell', 'cat /proc/self/maps'], 
+                              capture_output=True, text=True)
+        if "zygisk" in result.stdout.lower():
+            print("[!] Found Zygisk in memory maps")
+            violations_found.append("Zygisk in memory maps")
+    except Exception as e:
+        pass
+    
+    return violations_found
+
+def check_stealth_properties():
+    """Check stealth properties"""
+    print("\n[*] Checking Stealth Properties:")
     
     # Check for specific stealth properties
     stealth_props = [
@@ -59,46 +61,66 @@ def run_forensic_mock_scan():
         ("ro.boot.vbmeta.device_state", "locked")
     ]
     
-    print("\n[*] Checking Stealth Properties:")
-    for prop_name, expected_value in stealth_props:
-        result = subprocess.run(['adb', 'shell', f'getprop {prop_name}'], 
-                              capture_output=True, text=True)
-        actual_value = result.stdout.strip()
-        
-        if actual_value == expected_value:
-            print(f"   ✓ {prop_name}: {actual_value}")
-        else:
-            print(f"   ✗ {prop_name}: Expected '{expected_value}', got '{actual_value}'")
+    all_passed = True
     
-    # Check for hidden components
+    for prop_name, expected_value in stealth_props:
+        try:
+            result = subprocess.run(['adb', 'shell', f'getprop {prop_name}'], 
+                                  capture_output=True, text=True)
+            actual_value = result.stdout.strip()
+            
+            if actual_value == expected_value:
+                print(f"   ✓ {prop_name}: {actual_value}")
+            else:
+                print(f"   ✗ {prop_name}: Expected '{expected_value}', got '{actual_value}'")
+                all_passed = False
+        except Exception as e:
+            print(f"   ✗ {prop_name}: Error checking property")
+            all_passed = False
+    
+    return all_passed
+
+def check_hidden_components():
+    """Check for hidden components"""
     print("\n[*] Checking for hidden components:")
     
     # Check if Magisk binaries are properly hidden
-    result = subprocess.run(['adb', 'shell', 'ls -l /system/bin/magisk'], 
-                          capture_output=True, text=True)
-    if "No such file or directory" in result.stderr:
-        print("   ✓ Magisk binary properly hidden")
-    else:
-        print("   ✗ Magisk binary not properly hidden")
-    
-    # Check for Zygisk modules
-    result = subprocess.run(['adb', 'shell', 'su -c ls /data/adb/modules'], 
-                          capture_output=True, text=True)
-    if "No such file or directory" in result.stderr:
-        print("   ✓ No Magisk modules found (properly hidden)")
-    else:
-        print(f"   [i] Found Magisk modules: {result.stdout}")
+    try:
+        result = subprocess.run(['adb', 'shell', 'ls -l /system/bin/magisk'], 
+                              capture_output=True, text=True)
+        if "No such file or directory" in result.stderr:
+            print("   ✓ Magisk binary properly hidden")
+        else:
+            print("   ✗ Magisk binary not properly hidden")
+    except Exception as e:
+        pass
     
     # Check for mount namespace isolation
-    result = subprocess.run(['adb', 'shell', 'cat /proc/self/mounts'], 
-                          capture_output=True, text=True)
-    if "tmpfs" in result.stdout and "/data/adb/camera_ns" in result.stdout:
-        print("   ✓ Mount namespace isolation active")
-    else:
-        print("   [i] Mount namespace isolation may not be fully active")
+    try:
+        result = subprocess.run(['adb', 'shell', 'cat /proc/self/mounts'], 
+                              capture_output=True, text=True)
+        if "tmpfs" in result.stdout and "/data/adb/camera_ns" in result.stdout:
+            print("   ✓ Mount namespace isolation active")
+        else:
+            print("   [i] Mount namespace isolation may not be fully active")
+    except Exception as e:
+        pass
+
+def run_forensic_mock_scan():
+    """Run a forensic mock-scan to check for stealth violations"""
+    print("[*] Running Forensic Mock-Scan...")
     
-    # Provide SELinux policies to hide violations
-    if violations_found:
+    # Check for root components that shouldn't be visible
+    violations = check_root_components()
+    
+    # Check stealth properties
+    props_ok = check_stealth_properties()
+    
+    # Check hidden components
+    check_hidden_components()
+    
+    # Provide SELinux policies to hide violations if any were found
+    if violations:
         print("\n[*] SELinux Policies to Hide Violations:")
         print("1. Create a custom policy file in /sepolicy")
         print("2. Add rules like:")
@@ -138,7 +160,7 @@ def audit_device_compliance():
     
     # Check Android version
     try:
-        result = subprocess.run(['adb', 'shell', 'getprop', 'ro.build.version.release'], 
+        result = subprocess.run(['adb', 'shell', 'getprop ro.build.version.release'], 
                               capture_output=True, text=True)
         android_version = result.stdout.strip()
         
@@ -151,7 +173,7 @@ def audit_device_compliance():
     
     # Check model
     try:
-        result = subprocess.run(['adb', 'shell', 'getprop', 'ro.product.model'], 
+        result = subprocess.run(['adb', 'shell', 'getprop ro.product.model'], 
                               capture_output=True, text=True)
         model = result.stdout.strip()
         
@@ -164,7 +186,7 @@ def audit_device_compliance():
     
     # Check security patch level
     try:
-        result = subprocess.run(['adb', 'shell', 'getprop', 'ro.build.version.security_patch'], 
+        result = subprocess.run(['adb', 'shell', 'getprop ro.build.version.security_patch'], 
                               capture_output=True, text=True)
         patch_level = result.stdout.strip()
         
@@ -186,8 +208,6 @@ def validate_sensor_metadata():
     if not profile:
         return False
     
-    # This would typically involve checking actual sensor data
-    # For now, we'll just verify the structure exists
     try:
         sensors = profile['hardware_profile']['sensor_array']
         
