@@ -1,0 +1,26 @@
+
+service.sh
+```bash
+#!/system/bin/sh
+
+# VCam Service for Ghost Device Protocol
+# This script runs continuously to maintain stealth properties
+
+echo "[VCam Service] Starting..."
+
+while true; do
+    # Ensure persistent properties are set
+    resetprop persist.vcam.stealth 1
+    resetprop ro.product.model "Pixel 4a"
+    resetprop ro.product.brand "Google"
+    
+    # Check for TEE Keybox issues and fix if needed
+    if [ -f "/data/adb/modules/vcam/fix_tee_keybox.sh" ]; then
+        /data/adb/modules/vcam/fix_tee_keybox.sh
+    fi
+    
+    # Sleep for 30 seconds before next check
+    sleep 30
+done
+
+echo "[VCam Service] Stopped"
