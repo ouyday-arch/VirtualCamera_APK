@@ -1,0 +1,2 @@
+This directory was removed from the project.
+The project is now pure Java and doesn't use native C++ components.
