@@ -1,0 +1,49 @@
+{
+  "device_profile": {
+    "manufacturer": "Google",
+    "model": "Pixel 4a",
+    "codename": "sunfish",
+    "android_version": "13",
+    "security_patch_level": "2026-01-01",
+    "fingerprint": "google/sunfish/cheetah:13/TQ3A.230505.001/9876543:user/release-keys"
+  },
+  "hardware_profile": {
+    "cpu": "Snapdragon 730G",
+    "gpu": "Adreno 618",
+    "ram": "6GB",
+    "storage": "64GB",
+    "sensor_array": [
+      {
+        "type": "IMX363",
+        "vendor": "Sony",
+        "resolution": "48MP",
+        "noise_profile": {
+          "read_noise": "2.5e-10",
+          "dark_current": "0.001",
+          "dynamic_range": "120dB"
+        }
+      },
+      {
+        "type": "IMX376",
+        "vendor": "Sony",
+        "resolution": "48MP",
+        "noise_profile": {
+          "read_noise": "2.5e-10",
+          "dark_current": "0.001",
+          "dynamic_range": "120dB"
+        }
+      }
+    ]
+  },
+  "unique_identifiers": {
+    "imei": "356789012345678",
+    "serial_number": "A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2W3X4Y5Z6",
+    "device_id": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+  },
+  "system_properties": {
+    "ro.product.model": "Pixel 4a",
+    "ro.build.version.release": "13",
+    "ro.build.version.security_patch": "2026-01-01",
+    "ro.build.fingerprint": "google/sunfish/cheetah:13/TQ3A.230505.001/9876543:user/release-keys"
+  }
+}
