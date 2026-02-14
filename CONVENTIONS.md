@@ -7,6 +7,7 @@
 - All repository definitions (google(), mavenCentral()) MUST be placed in settings.gradle inside a dependencyResolutionManagement block. Do NOT place them in module-level build.gradle files.
 - Always create a gradle.properties file with android.useAndroidX=true for any project using modern Android libraries.
 - Never rely on the system's default Gradle version in CI/CD. Always use gradle/actions/setup-gradle to pin a specific compatible version (e.g., 8.5).
+- Do NOT use ./gradlew. This project does not have a wrapper. Always use the system gradle command in CI/CD.
 
 ## 2. File Handling
 - **NEVER** use `../` (parent directory) traversal in Python/Aider commands on Windows. It causes `pathlib` crashes.
