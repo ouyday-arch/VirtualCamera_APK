@@ -10,6 +10,7 @@
 ## 2. File Handling
 - **NEVER** use `../` (parent directory) traversal in Python/Aider commands on Windows. It causes `pathlib` crashes.
 - Always use absolute paths or copy reference files into a local `refs/` folder before reading them.
+- The AndroidManifest.xml is critical. Never delete it during cleanup operations.
 
 ## 3. Xposed Module Logic
 - The entry point must be defined in `assets/xposed_init`.
