@@ -14,6 +14,110 @@ def load_ghost_profile():
         print(f"[!] Error loading ghost profile: {e}")
         return None
 
+def run_forensic_mock_scan():
+    """Run a forensic mock-scan to check for stealth violations"""
+    print("[*] Running Forensic Mock-Scan...")
+    
+    # Check for root components that shouldn't be visible
+    checks = [
+        ("Root binary", "/sbin/su"),
+        ("Magisk directory", "/data/adb/magisk"),
+        ("Zygisk in memory maps", "zygisk")
+    ]
+    
+    violations_found = []
+    
+    for check_name, path in checks:
+        if check_name == "Root binary":
+            # Check for su binary
+            result = subprocess.run(['adb', 'shell', 'ls -l /sbin/su'], 
+                                  capture_output=True, text=True)
+            if "/sbin/su" in result.stdout:
+                print(f"[!] Found root binary: {path}")
+                violations_found.append("Root binary")
+                
+        elif check_name == "Magisk directory":
+            # Check for Magisk directory
+            result = subprocess.run(['adb', 'shell', 'ls -l /data/adb/magisk'], 
+                                  capture_output=True, text=True)
+            if "/data/adb/magisk" in result.stdout:
+                print(f"[!] Found Magisk directory: {path}")
+                violations_found.append("Magisk directory")
+                
+        elif check_name == "Zygisk in memory maps":
+            # Check for Zygisk strings in memory
+            result = subprocess.run(['adb', 'shell', 'cat /proc/self/maps'], 
+                                  capture_output=True, text=True)
+            if "zygisk" in result.stdout.lower():
+                print("[!] Found Zygisk in memory maps")
+                violations_found.append("Zygisk in memory maps")
+    
+    # Check for specific stealth properties
+    stealth_props = [
+        ("ro.boot.flash.locked", "1"),
+        ("ro.boot.verifiedbootstate", "green"), 
+        ("ro.boot.vbmeta.device_state", "locked")
+    ]
+    
+    print("\n[*] Checking Stealth Properties:")
+    for prop_name, expected_value in stealth_props:
+        result = subprocess.run(['adb', 'shell', f'getprop {prop_name}'], 
+                              capture_output=True, text=True)
+        actual_value = result.stdout.strip()
+        
+        if actual_value == expected_value:
+            print(f"   ✓ {prop_name}: {actual_value}")
+        else:
+            print(f"   ✗ {prop_name}: Expected '{expected_value}', got '{actual_value}'")
+    
+    # Check for hidden components
+    print("\n[*] Checking for hidden components:")
+    
+    # Check if Magisk binaries are properly hidden
+    result = subprocess.run(['adb', 'shell', 'ls -l /system/bin/magisk'], 
+                          capture_output=True, text=True)
+    if "No such file or directory" in result.stderr:
+        print("   ✓ Magisk binary properly hidden")
+    else:
+        print("   ✗ Magisk binary not properly hidden")
+    
+    # Check for Zygisk modules
+    result = subprocess.run(['adb', 'shell', 'su -c ls /data/adb/modules'], 
+                          capture_output=True, text=True)
+    if "No such file or directory" in result.stderr:
+        print("   ✓ No Magisk modules found (properly hidden)")
+    else:
+        print(f"   [i] Found Magisk modules: {result.stdout}")
+    
+    # Provide SELinux policies to hide violations
+    if violations_found:
+        print("\n[*] SELinux Policies to Hide Violations:")
+        print("1. Create a custom policy file in /sepolicy")
+        print("2. Add rules like:")
+        print("   allow system_app magisk_file { read open }")
+        print("   allow zygote zygisk_exec { execve }")
+        print("3. Load the policy with: load_policy /sepolicy")
+        
+        # Generate a sample SELinux policy
+        selinux_policy = """
+# Custom policy to hide root components
+# This should be loaded into system sepolicy
+        
+# Hide Magisk files from normal apps
+allow app_data_file magisk_file { read open };
+allow app_data_file zygisk_exec { execve };
+
+# Hide su binary access
+allow system_app su_binary { execute };
+"""
+        print("\nGenerated SELinux Policy:")
+        print(selinux_policy)
+        
+        return False  # Return false if violations found
+    else:
+        print("[+] No stealth violations detected")
+        return True
+
 def audit_device_compliance():
     """Audit device compliance with the golden profile"""
     profile = load_ghost_profile()
@@ -105,6 +209,11 @@ def run_comprehensive_audit():
     # Check sensor metadata
     if not validate_sensor_metadata():
         print("[!] Sensor metadata validation FAILED")
+        return False
+    
+    # Run forensic mock scan
+    if not run_forensic_mock_scan():
+        print("[!] Forensic mock scan detected violations")
         return False
     
     print("[+] All audits PASSED - Device is compliant with golden profile")

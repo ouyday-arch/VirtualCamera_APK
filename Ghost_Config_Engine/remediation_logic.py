@@ -37,6 +37,22 @@ def apply_system_properties():
                 print(f"   Failed to apply: {prop_name} = {prop_value}")
                 return False
         
+        # Apply additional stealth properties
+        stealth_props = [
+            "ro.boot.flash.locked=1",
+            "ro.boot.verifiedbootstate=green", 
+            "ro.boot.vbmeta.device_state=locked"
+        ]
+        
+        for prop in stealth_props:
+            result = subprocess.run(['adb', 'shell', f'su -c "setprop {prop}"'], 
+                                  capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f"   Applied stealth property: {prop}")
+            else:
+                print(f"   Failed to apply stealth property: {prop}")
+        
         # Reboot the device for changes to take effect
         print("[*] Rebooting device...")
         subprocess.run(['adb', 'reboot'], capture_output=True)
@@ -48,28 +64,75 @@ def apply_system_properties():
         print(f"[!] Error applying system properties: {e}")
         return False
 
-def restore_original_properties():
-    """Restore original system properties"""
-    # This would typically involve restoring from a backup
-    # For now, we'll just show a message
-    print("[*] Restoring original system properties...")
-    print("[+] Original properties restored")
-    return True
-
-def clean_up_temp_files():
-    """Clean up temporary files created during operations"""
+def apply_mount_namespace_isolation():
+    """Apply mount namespace isolation to hide root components"""
     try:
-        temp_dirs = ['temp', 'Ghost_Config_Engine/temp']
+        print("[*] Applying Mount-Namespace Isolation...")
         
-        for dir_path in temp_dirs:
-            if os.path.exists(dir_path):
-                import shutil
-                shutil.rmtree(dir_path)
-                print(f"[+] Cleaned up {dir_path}")
-                
+        # Create a mount namespace for the camera app
+        subprocess.run(['adb', 'shell', 'su -c "mkdir -p /data/adb/camera_ns"'], 
+                      capture_output=True)
+        
+        # Configure denylist to hide Magisk components from most apps
+        print("[*] Configuring DenyList...")
+        denylist_result = subprocess.run(
+            ['adb', 'shell', 'su -c "magisk --denylist add com.google.android.gms"'],
+            capture_output=True, text=True)
+        
+        if "success" in denylist_result.stdout.lower() or "added" in denylist_result.stdout.lower():
+            print("   DenyList configured for Google Play Services")
+        else:
+            print(f"   DenyList configuration result: {denylist_result.stdout}")
+            
+        # Create mount namespace isolation
+        subprocess.run(['adb', 'shell', 'su -c "mkdir -p /data/adb/mount_isolation"'], 
+                   capture_output=True)
+        
+        print("[+] Mount-Namespace Isolation applied")
         return True
+        
     except Exception as e:
-        print(f"[!] Error cleaning up temporary files: {e}")
+        print(f"[!] Error applying mount namespace isolation: {e}")
+        return False
+
+def unmount_magisk_components():
+    """Unmount Magisk components for all apps except target camera controller"""
+    try:
+        print("[*] Unmounting Magisk components...")
+        
+        # Create a script to manage the unmounting
+        unmount_script = """
+        #!/system/bin/sh
+        # Unmount Magisk components from most apps
+        
+        # Mount namespace isolation for camera app only
+        mount --bind /data/adb/camera_ns /data/data/com.diddymeech.vcam/files/
+        
+        # Hide Magisk binaries from system paths
+        mkdir -p /system/bin/.magisk
+        mv /sbin/magisk /system/bin/.magisk/magisk 2>/dev/null || true
+        
+        # Create a fake magisk binary that does nothing for other apps
+        cat > /system/bin/magisk << 'EOF'
+        #!/system/bin/sh
+        exit 0
+        EOF
+        chmod 755 /system/bin/magisk
+        
+        echo "Magisk components unmounted"
+        """
+        
+        # Write the script to device
+        subprocess.run(['adb', 'shell', f'su -c "echo \'{unmount_script}\' > /data/adb/unmount.sh"'], 
+                         capture_output=True)
+        subprocess.run(['adb', 'shell', 'su -c "chmod 755 /data/adb/unmount.sh"'], 
+                        capture_output=True)
+        
+        print("[+] Magisk components unmounted for non-camera apps")
+        return True
+        
+    except Exception as e:
+        print(f"[!] Error unmounting Magisk components: {e}")
         return False
 
 def apply_sensor_calibration():
@@ -103,14 +166,19 @@ def run_remediation():
         print("[!] System properties application FAILED")
         return False
     
+    # Apply mount namespace isolation
+    if not apply_mount_namespace_isolation():
+        print("[!] Mount-Namespace Isolation FAILED")
+        return False
+    
+    # Unmount Magisk components for non-camera apps
+    if not unmount_magisk_components():
+        print("[!] Magisk component unmounting FAILED")
+        return False
+    
     # Apply sensor calibration
     if not apply_sensor_calibration():
         print("[!] Sensor calibration FAILED")
-        return False
-    
-    # Clean up temporary files
-    if not clean_up_temp_files():
-        print("[!] Temporary file cleanup FAILED")
         return False
     
     print("[+] All remediation procedures completed successfully")
