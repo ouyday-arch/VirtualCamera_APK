@@ -109,8 +109,16 @@ def provision_zero_day():
     zygisk_result = run_adb("shell su -c magisk --zygisk on")
     print(f"   Zygisk enabled: {zygisk_result}")
     
+    # Check if zygisk command was successful
+    if "success" not in zygisk_result.lower() and "enabled" not in zygisk_result.lower():
+        print("   [!] Warning: Zygisk configuration may have failed")
+    
     denylist_result = run_adb("shell su -c magisk --denylist on")
     print(f"   Denylist enabled: {denylist_result}")
+    
+    # Check if denylist command was successful
+    if "success" not in denylist_result.lower() and "enabled" not in denylist_result.lower():
+        print("   [!] Warning: Denylist configuration may have failed")
     
     # 3. Download & Flash Stealth Stack
     print("\n[*] Step 3: Installing stealth modules...")
