@@ -1,4 +1,4 @@
-package q2;
+package com.diddymeech.vcam;
 
 import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
@@ -119,5 +119,19 @@ public class VideoInjector {
      */
     public boolean isPlaying() {
         return isPlaying && mediaCodec != null;
+    }
+    
+    /**
+     * Static method to inject video into a SurfaceTexture
+     * This allows injection without creating an instance first
+     */
+    public static void injectVideo(Object surfaceTexture) {
+        try {
+            // Create VideoInjector and start injecting
+            VideoInjector injector = new VideoInjector((SurfaceTexture) surfaceTexture);
+            injector.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
