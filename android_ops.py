@@ -83,6 +83,12 @@ def provision_zero_day():
         print("[!] No Android device found. Please connect your device via USB and enable Developer Options.")
         return
     
+    # Verify ADB is working properly
+    adb_check = run_adb("shell echo 'ADB Working'")
+    if "ADB Working" not in adb_check:
+        print("[!] ADB connection failed. Please check USB debugging settings.")
+        return
+    
     # 1. Sanitize - Uninstall detection apps
     print("\n[*] Step 1: Sanitizing device...")
     detection_apps = [
@@ -138,7 +144,7 @@ def provision_zero_day():
             print(f"   Push result: {push_result}")
             
             # Check if push was successful before installing
-            if "bytes" in push_result.lower() or "failed" not in push_result.lower():
+            if "bytes" in push_result.lower() or ("failed" not in push_result.lower() and push_result.strip()):
                 # Install via Magisk
                 install_result = run_adb(f"shell su -c magisk --install-module /sdcard/{module['filename']}")
                 print(f"   Installation result: {install_result}")
@@ -166,9 +172,15 @@ def provision_zero_day():
         print(f"   Push result: {push_result}")
         
         # Check if push was successful before installing
-        if "bytes" in push_result.lower() or "failed" not in push_result.lower():
+        if "bytes" in push_result.lower() or ("failed" not in push_result.lower() and push_result.strip()):
             install_result = run_adb("shell pm install -r /sdcard/VCam-Debug.apk")
             print(f"   Installation result: {install_result}")
+            
+            # Verify installation was successful
+            if "Success" in install_result or "success" in install_result.lower():
+                print("   [+] VCam installed successfully")
+            else:
+                print(f"   [!] VCam installation may have failed: {install_result}")
         else:
             print(f"   [!] Failed to push VCam APK to device")
     else:
