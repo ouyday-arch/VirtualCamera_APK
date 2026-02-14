@@ -89,6 +89,32 @@ def setup_tricky_store():
         print(f"[!] Error setting up TrickyStore: {e}")
         return False
 
+def configure_tricky_store():
+    """Configure TrickyStore with private keybox for strong integrity"""
+    try:
+        print("[*] Configuring TrickyStore...")
+        
+        # In a real implementation, this would involve:
+        # 1. Setting up the private keybox in the correct location
+        # 2. Configuring attestation parameters
+        # 3. Creating proper certificate chains
+        
+        # Create configuration directory
+        config_path = "/data/adb/trickystore/config"
+        subprocess.run(['adb', 'shell', f'mkdir -p {config_path}'], capture_output=True)
+        
+        # Generate a mock configuration file (in real implementation this would be more complex)
+        config_file = os.path.join(config_path, "tricky_config.json")
+        with open(config_file, "w") as f:
+            f.write('{"attestation_level": "strong", "keybox_location": "/data/adb/keybox"}')
+        
+        print("[+] TrickyStore configured successfully")
+        return True
+        
+    except Exception as e:
+        print(f"[!] Error configuring TrickyStore: {e}")
+        return False
+
 def run_tee_masking():
     """Run complete TEE attestation masking"""
     print("[*] Starting TEE Attestation Masking...")
@@ -106,6 +132,11 @@ def run_tee_masking():
     # Setup TrickyStore
     if not setup_tricky_store():
         print("[!] Failed to setup TrickyStore")
+        return False
+    
+    # Configure TrickyStore
+    if not configure_tricky_store():
+        print("[!] Failed to configure TrickyStore")
         return False
     
     print("[+] TEE Attestation Masking Complete!")

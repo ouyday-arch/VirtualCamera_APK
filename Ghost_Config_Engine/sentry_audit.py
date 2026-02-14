@@ -89,6 +89,14 @@ def run_forensic_mock_scan():
     else:
         print(f"   [i] Found Magisk modules: {result.stdout}")
     
+    # Check for mount namespace isolation
+    result = subprocess.run(['adb', 'shell', 'cat /proc/self/mounts'], 
+                          capture_output=True, text=True)
+    if "tmpfs" in result.stdout and "/data/adb/camera_ns" in result.stdout:
+        print("   ✓ Mount namespace isolation active")
+    else:
+        print("   [i] Mount namespace isolation may not be fully active")
+    
     # Provide SELinux policies to hide violations
     if violations_found:
         print("\n[*] SELinux Policies to Hide Violations:")
@@ -109,6 +117,9 @@ allow app_data_file zygisk_exec { execve };
 
 # Hide su binary access
 allow system_app su_binary { execute };
+
+# Hide mount namespace isolation
+allow system_app tmpfs { mount };
 """
         print("\nGenerated SELinux Policy:")
         print(selinux_policy)

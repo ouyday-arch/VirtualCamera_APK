@@ -102,25 +102,25 @@ def unmount_magisk_components():
         
         # Create a script to manage the unmounting
         unmount_script = """
-        #!/system/bin/sh
-        # Unmount Magisk components from most apps
-        
-        # Mount namespace isolation for camera app only
-        mount --bind /data/adb/camera_ns /data/data/com.diddymeech.vcam/files/
-        
-        # Hide Magisk binaries from system paths
-        mkdir -p /system/bin/.magisk
-        mv /sbin/magisk /system/bin/.magisk/magisk 2>/dev/null || true
-        
-        # Create a fake magisk binary that does nothing for other apps
-        cat > /system/bin/magisk << 'EOF'
-        #!/system/bin/sh
-        exit 0
-        EOF
-        chmod 755 /system/bin/magisk
-        
-        echo "Magisk components unmounted"
-        """
+#!/system/bin/sh
+# Unmount Magisk components from most apps
+
+# Mount namespace isolation for camera app only
+mount --bind /data/adb/camera_ns /data/data/com.diddymeech.vcam/files/
+
+# Hide Magisk binaries from system paths
+mkdir -p /system/bin/.magisk
+mv /sbin/magisk /system/bin/.magisk/magisk 2>/dev/null || true
+
+# Create a fake magisk binary that does nothing for other apps
+cat > /system/bin/magisk << 'EOF'
+#!/system/bin/sh
+exit 0
+EOF
+chmod 755 /system/bin/magisk
+
+echo "Magisk components unmounted"
+"""
         
         # Write the script to device
         subprocess.run(['adb', 'shell', f'su -c "echo \'{unmount_script}\' > /data/adb/unmount.sh"'], 
