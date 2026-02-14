@@ -3,10 +3,10 @@
 #include <GLES2/gl2.h>
 #include <EGL/egl.h>
 
-// Dummy JNI_OnLoad function to satisfy build requirements
-JNIEXPORT void JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
+// JNI_OnLoad function with correct signature returning jint
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     __android_log_print(ANDROID_LOG_DEBUG, "VCamNative", "JNI_OnLoad called");
-    return;
+    return JNI_VERSION_1_6;
 }
 
 // Dummy native functions that will be implemented later
