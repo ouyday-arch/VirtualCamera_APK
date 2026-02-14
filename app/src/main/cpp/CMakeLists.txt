@@ -1,26 +1,23 @@
 cmake_minimum_required(VERSION 3.22.1)
-project(vcam_core)
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project("vcam-core")
 
-# Add the library
-add_library(vcam-core SHARED
-    vcam_native.cpp
-)
+# Create the library
+add_library(
+        vcam-core
+        SHARED
+        vcam_native.cpp)
 
-# Find required packages
-find_package(EGL REQUIRED)
-find_package(GLESv2 REQUIRED)
+# Search for the log library (standard NDK)
+find_library(
+        log-lib
+        log)
 
-# Link libraries
-target_link_libraries(vcam-core
-    android
-    log
-    EGL
-    GLESv2
-)
-
-# Include directories for proper header access
-target_include_directories(vcam-core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# Link libraries.
+# NOTE: For Android, EGL and GLESv2 are linked directly, NOT via find_package.
+target_link_libraries(
+        vcam-core
+        ${log-lib}
+        android
+        EGL
+        GLESv2)

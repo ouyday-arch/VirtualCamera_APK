@@ -31,3 +31,6 @@
 
 ## 5. Android Modernization
 - For AGP 8.0+, NEVER define the package attribute in AndroidManifest.xml. Always define the namespace in build.gradle instead.
+
+## 6. C++ Build Conventions (Critical)
+- **In Android NDK CMakeLists.txt, NEVER use find_package for EGL or GLES. Link them directly in target_link_libraries.**
