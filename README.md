@@ -18,7 +18,7 @@ This project provides a complete Virtual Camera ecosystem for the Google Pixel 4
 4. Once completed, download the artifacts:
    - `VCam_Magisk_Module.zip`: Flash this in Magisk.
    - `VCam_Controller_APK.apk`: Install this on the phone.
-   - `PC_Tools.zip` (or `start_stream.bat`): Run this on your PC.
+   - `PC_Tools.zip` (or `start_stream.bat`): Run this on your PC. 
 
 ## Usage
 
